@@ -479,6 +479,11 @@ summary:focus-visible {
   box-shadow: 0 12px 28px rgba(36, 53, 55, 0.12), inset 3px 0 var(--brand);
 }
 
+.trip-card--next .ride-index {
+  color: var(--mint);
+  background: var(--brand);
+}
+
 .trip-card__top {
   display: grid;
   grid-template-columns: 38px minmax(70px, 1fr) minmax(42px, 0.58fr) minmax(70px, 1fr);
@@ -563,19 +568,6 @@ summary:focus-visible {
   stroke-width: 1.35;
   stroke-linecap: round;
   stroke-linejoin: round;
-}
-
-.next-badge {
-  position: absolute;
-  top: 0;
-  right: 18px;
-  padding: 4px 8px;
-  border-radius: 0 0 8px 8px;
-  color: var(--mint);
-  background: var(--brand);
-  font-size: 0.5rem;
-  font-weight: 820;
-  letter-spacing: 0.11em;
 }
 
 .route-timeline {

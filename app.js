@@ -138,7 +138,7 @@ function tripCard(trip, index, period, nextTrip) {
     <article class="trip-card ${isNext ? "trip-card--next" : ""}" role="listitem" id="${trip.id}">
       <header class="trip-card__top">
         <div class="ride-index">
-          <span>RIDE</span>
+          <span>${isNext ? "NEXT" : "RIDE"}</span>
           <strong>${String(index + 1).padStart(2, "0")}</strong>
         </div>
         <div class="trip-card__departure">
@@ -153,7 +153,6 @@ function tripCard(trip, index, period, nextTrip) {
           <p>Arrive ${destination.name}</p>
           <time datetime="${destination.time}">${arrival.clock}<small>${arrival.period}</small></time>
         </div>
-        ${isNext ? '<span class="next-badge">NEXT</span>' : ""}
       </header>
 
       ${stopTimeline(trip.stops)}
