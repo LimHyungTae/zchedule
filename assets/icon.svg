@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Zchedule</title>
+  <desc id="description">A pale mint Z on a deep teal square</desc>
+  <rect width="512" height="512" fill="#34484a" />
+  <rect x="24" y="24" width="464" height="464" rx="108" fill="none" stroke="#c4dbd4" stroke-opacity="0.16" stroke-width="4" />
+  <path d="M150 158H362L150 354H362" fill="none" stroke="#c4dbd4" stroke-width="46" stroke-linecap="round" stroke-linejoin="round" />
+</svg>
