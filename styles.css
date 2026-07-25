@@ -126,12 +126,13 @@ summary:focus-visible {
 }
 
 .hero h1 {
-  max-width: 13ch;
+  max-width: none;
   margin: 0;
   color: var(--brand-deep);
-  font-size: clamp(2.15rem, 8vw, 4.35rem);
-  line-height: 0.98;
-  letter-spacing: -0.066em;
+  font-size: clamp(1.42rem, 5.9vw, 3.55rem);
+  line-height: 1;
+  letter-spacing: -0.055em;
+  white-space: nowrap;
 }
 
 .hero > p:last-child {
