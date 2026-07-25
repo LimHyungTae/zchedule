@@ -23,12 +23,14 @@ Then open `http://127.0.0.1:4173`.
 
 The source image remains available through **View original** for visual verification.
 
-## Install on Android
+## Install on a phone
 
-1. Open the published page in Chrome.
-2. Open the Chrome menu.
-3. Choose **Add to Home screen** or **Install app**.
-4. Launch Zchedule from its home-screen icon.
+Open the published page and tap **Install app**. Zchedule chooses the right flow for the device:
+
+- On Android, it opens the native browser install prompt when available. If the prompt is unavailable, follow the browser-menu steps shown in the app.
+- On iPhone or iPad, it shows the current **Share → Add to Home Screen → Add** steps. Keep **Open as Web App** turned on if that option appears.
+
+After installation, launch Zchedule from its Home Screen icon.
 
 Long-pressing the icon may also expose Morning and Afternoon shortcuts on supported launchers.
 

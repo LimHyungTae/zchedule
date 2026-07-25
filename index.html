@@ -132,10 +132,11 @@
             </svg>
           </div>
           <div class="install-card__copy">
+            <p class="install-card__platform" id="install-platform">SMART INSTALL</p>
             <h2 id="install-title">One tap from your home screen</h2>
-            <p id="install-help">Open the Chrome menu and choose “Add to Home screen” or “Install app.”</p>
+            <p id="install-help" aria-live="polite">Choose install to get the right steps for this device.</p>
           </div>
-          <button class="install-button" id="install-button" type="button" hidden>Install app</button>
+          <button class="install-button" id="install-button" type="button" aria-describedby="install-help" hidden>Install app</button>
         </section>
 
         <noscript>
@@ -168,6 +169,32 @@
       </div>
       <div class="full-dialog__scroller">
         <img src="./time_table.png" alt="Complete Morning and Afternoon timetable">
+      </div>
+    </dialog>
+
+    <dialog
+      class="install-dialog"
+      id="install-dialog"
+      aria-labelledby="install-dialog-title"
+      aria-describedby="install-dialog-copy"
+    >
+      <div class="install-dialog__header">
+        <div>
+          <p class="schedule-card__eyebrow" id="install-dialog-kicker">INSTALL</p>
+          <h2 id="install-dialog-title" tabindex="-1">Add to your Home Screen</h2>
+        </div>
+        <form method="dialog">
+          <button class="dialog-close" type="submit" aria-label="Close install instructions">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m6 6 12 12M18 6 6 18" />
+            </svg>
+          </button>
+        </form>
+      </div>
+      <div class="install-dialog__body">
+        <p class="install-dialog__copy" id="install-dialog-copy"></p>
+        <ol class="install-steps" id="install-dialog-steps"></ol>
+        <p class="install-dialog__tip" id="install-dialog-tip"></p>
       </div>
     </dialog>
   </body>

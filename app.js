@@ -19,11 +19,134 @@ const nextCountdown = document.querySelector("#next-countdown");
 const nextRoute = document.querySelector("#next-route");
 const fullViewButton = document.querySelector("#full-view-button");
 const fullScheduleDialog = document.querySelector("#full-schedule-dialog");
+const installCard = document.querySelector(".install-card");
+const installTitle = document.querySelector("#install-title");
+const installPlatformLabel = document.querySelector("#install-platform");
 const installButton = document.querySelector("#install-button");
 const installHelp = document.querySelector("#install-help");
+const installDialog = document.querySelector("#install-dialog");
+const installDialogKicker = document.querySelector("#install-dialog-kicker");
+const installDialogTitle = document.querySelector("#install-dialog-title");
+const installDialogCopy = document.querySelector("#install-dialog-copy");
+const installDialogSteps = document.querySelector("#install-dialog-steps");
+const installDialogTip = document.querySelector("#install-dialog-tip");
 
 let currentView = "morning";
 let installPrompt = null;
+
+const standaloneMedia = window.matchMedia("(display-mode: standalone)");
+
+function installationPlatform() {
+  const userAgent = navigator.userAgent || "";
+  const isAppleMobile = /iPad|iPhone|iPod/i.test(userAgent)
+    || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+
+  if (isAppleMobile) {
+    return "ios";
+  }
+  if (/Android/i.test(userAgent)) {
+    return "android";
+  }
+  return "other";
+}
+
+const devicePlatform = installationPlatform();
+
+const INSTALL_GUIDES = {
+  ios: {
+    platform: "IPHONE & IPAD",
+    cardTitle: "Install on iPhone or iPad",
+    cardHelp: "Tap below for the quick Add to Home Screen steps.",
+    button: "Install on iPhone / iPad",
+    dialogTitle: "Add Zchedule to your Home Screen",
+    dialogCopy: "iOS requires one quick confirmation from your browser’s Share menu.",
+    steps: [
+      ["Tap Share", "Use the square-with-up-arrow button in your browser toolbar."],
+      ["Choose Add to Home Screen", "Scroll the Share menu if the option is not immediately visible."],
+      ["Tap Add", "Keep “Open as Web App” turned on if that option appears."],
+    ],
+    tip: "If Add to Home Screen is missing, open this page in Safari and try again.",
+  },
+  android: {
+    platform: "ANDROID",
+    cardTitle: "Install Zchedule",
+    cardHelp: "Tap once for the Android install prompt and one-tap access.",
+    button: "Install on Android",
+    dialogTitle: "Install Zchedule on Android",
+    dialogCopy: "The native prompt is not available right now, but your browser menu works too.",
+    steps: [
+      ["Open the browser menu", "Use the menu button in your browser toolbar."],
+      ["Choose Install app", "Some browsers label this “Add to Home screen.”"],
+      ["Confirm Install", "Launch Zchedule from the new Z icon on your Home Screen."],
+    ],
+    tip: "Chrome provides the smoothest Android installation experience.",
+  },
+  other: {
+    platform: "THIS DEVICE",
+    cardTitle: "Keep Zchedule one tap away",
+    cardHelp: "Use your browser’s app or home-screen option for faster access.",
+    button: "Install app",
+    dialogTitle: "Install Zchedule",
+    dialogCopy: "Installation options vary by browser. This is the usual route.",
+    steps: [
+      ["Open the browser menu", "Look for the menu or Share button in your toolbar."],
+      ["Choose Install app", "You may see “Add to Home Screen” or “Add to Dock” instead."],
+      ["Confirm", "Open Zchedule from its new app icon."],
+    ],
+    tip: "If no install option appears, open this page in Chrome, Edge, or Safari.",
+  },
+};
+
+function isStandalone() {
+  return standaloneMedia.matches || navigator.standalone === true;
+}
+
+function syncInstallUI() {
+  if (isStandalone()) {
+    installCard.hidden = true;
+    return;
+  }
+
+  const guide = INSTALL_GUIDES[devicePlatform];
+  installCard.hidden = false;
+  installCard.dataset.platform = devicePlatform;
+  installPlatformLabel.textContent = guide.platform;
+  installTitle.textContent = guide.cardTitle;
+  installHelp.textContent = installPrompt
+    ? "Ready to install. Tap below to open the native prompt."
+    : guide.cardHelp;
+  installButton.textContent = guide.button;
+  installButton.disabled = false;
+  installButton.hidden = false;
+}
+
+function showInstallGuide() {
+  const guide = INSTALL_GUIDES[devicePlatform];
+  installDialogKicker.textContent = guide.platform;
+  installDialogTitle.textContent = guide.dialogTitle;
+  installDialogCopy.textContent = guide.dialogCopy;
+  installDialogTip.textContent = guide.tip;
+  installDialogSteps.replaceChildren(
+    ...guide.steps.map(([title, copy], index) => {
+      const item = document.createElement("li");
+      const number = document.createElement("span");
+      const content = document.createElement("span");
+      const heading = document.createElement("strong");
+      const detail = document.createElement("span");
+
+      number.className = "install-step__number";
+      number.textContent = String(index + 1).padStart(2, "0");
+      content.className = "install-step__content";
+      heading.textContent = title;
+      detail.textContent = copy;
+      content.append(heading, detail);
+      item.append(number, content);
+      return item;
+    }),
+  );
+  installDialog.showModal();
+  installDialogTitle.focus({ preventScroll: true });
+}
 
 function viewFromLocation() {
   const hashView = window.location.hash.slice(1).toLowerCase();
@@ -257,30 +380,58 @@ fullScheduleDialog.addEventListener("click", (event) => {
 window.addEventListener("beforeinstallprompt", (event) => {
   event.preventDefault();
   installPrompt = event;
-  installButton.hidden = false;
-  installHelp.textContent = "Use the button below to add Zchedule to your home screen.";
+  syncInstallUI();
 });
 
 installButton.addEventListener("click", async () => {
-  if (!installPrompt) {
+  if (isStandalone()) {
+    installCard.hidden = true;
     return;
   }
 
-  installPrompt.prompt();
-  await installPrompt.userChoice;
+  if (!installPrompt) {
+    showInstallGuide();
+    return;
+  }
+
+  const promptEvent = installPrompt;
   installPrompt = null;
-  installButton.hidden = true;
+  installButton.disabled = true;
+  installButton.textContent = "Opening install…";
+
+  try {
+    await promptEvent.prompt();
+    const choice = await promptEvent.userChoice;
+    if (choice.outcome === "accepted") {
+      installHelp.textContent = "Finishing installation…";
+      installButton.hidden = true;
+      return;
+    }
+
+    installHelp.textContent = "You can install anytime from your browser menu.";
+    installButton.textContent = "Show install steps";
+  } catch {
+    syncInstallUI();
+    showInstallGuide();
+  } finally {
+    installButton.disabled = false;
+  }
 });
 
 window.addEventListener("appinstalled", () => {
   installPrompt = null;
-  installButton.hidden = true;
-  installHelp.textContent = "Zchedule was added to your home screen.";
+  installCard.hidden = true;
 });
 
-if (window.matchMedia("(display-mode: standalone)").matches) {
-  document.querySelector(".install-card").hidden = true;
-}
+installDialog.addEventListener("click", (event) => {
+  if (event.target === installDialog) {
+    installDialog.close();
+  }
+});
+
+standaloneMedia.addEventListener?.("change", syncInstallUI);
+window.addEventListener("pageshow", syncInstallUI);
+syncInstallUI();
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {

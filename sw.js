@@ -1,4 +1,4 @@
-const SHELL_CACHE = "zchedule-shell-v2";
+const SHELL_CACHE = "zchedule-shell-v3";
 const DATA_CACHE = "zchedule-data-v1";
 const CACHE_PREFIX = "zchedule-";
 
