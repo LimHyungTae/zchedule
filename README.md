@@ -2,6 +2,8 @@
 
 A small, installable timetable viewer with separate Morning and Afternoon views.
 
+**Live app:** [https://limhyungtae.github.io/zchedule/](https://limhyungtae.github.io/zchedule/)
+
 ## Open locally
 
 Serve the repository root with any static file server. For example:
