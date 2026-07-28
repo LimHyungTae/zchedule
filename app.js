@@ -1,19 +1,25 @@
-import { SCHEDULE } from "./schedule-data.js";
-import { scheduleClock, serviceDayStatus } from "./service-calendar.js";
+import { SCHEDULE } from "./schedule-data.js?v=6";
+import { scheduleClock, serviceDayStatus } from "./service-calendar.js?v=6";
 
-const SERVICE_STYLES = {
+const CONNECTION_STYLES = {
   regular: { short: "R", label: "Regular" },
   bullet: { short: "B", label: "Bullet" },
   limited: { short: "L", label: "Limited" },
+  orange: { short: "OR", label: "Orange Line" },
+  green: { short: "GR", label: "Green Line" },
 };
 
 const tabs = [...document.querySelectorAll(".period-tab")];
+const routeButtons = [...document.querySelectorAll(".route-option")];
 const panel = document.querySelector("#schedule-panel");
 const periodTitle = document.querySelector("#period-title");
 const periodKicker = document.querySelector("#period-kicker");
+const morningTabLabel = document.querySelector("#morning-tab-label");
+const afternoonTabLabel = document.querySelector("#afternoon-tab-label");
 const tripCount = document.querySelector("#trip-count");
 const tripList = document.querySelector("#trip-list");
-const effectiveDate = document.querySelector("#effective-date");
+const routeContext = document.querySelector("#route-context");
+const legend = document.querySelector("#legend");
 const nextRide = document.querySelector("#next-ride");
 const nextLabel = document.querySelector("#next-label");
 const nextTime = document.querySelector("#next-time");
@@ -21,6 +27,8 @@ const nextCountdown = document.querySelector("#next-countdown");
 const nextRoute = document.querySelector("#next-route");
 const fullViewButton = document.querySelector("#full-view-button");
 const fullScheduleDialog = document.querySelector("#full-schedule-dialog");
+const originalDialogTitle = document.querySelector("#dialog-title");
+const originalImage = document.querySelector("#original-image");
 const installCard = document.querySelector(".install-card");
 const installTitle = document.querySelector("#install-title");
 const installPlatformLabel = document.querySelector("#install-platform");
@@ -33,6 +41,7 @@ const installDialogCopy = document.querySelector("#install-dialog-copy");
 const installDialogSteps = document.querySelector("#install-dialog-steps");
 const installDialogTip = document.querySelector("#install-dialog-tip");
 
+let currentRouteKey = SCHEDULE.defaultRoute;
 let currentView = "morning";
 let installPrompt = null;
 
@@ -150,13 +159,54 @@ function showInstallGuide() {
   installDialogTitle.focus({ preventScroll: true });
 }
 
-function viewFromLocation() {
-  const hashView = window.location.hash.slice(1).toLowerCase();
-  if (hashView in SCHEDULE.periods) {
+function routeFromLocation({ useSavedRoute = true } = {}) {
+  const requestedRoute = new URLSearchParams(window.location.search).get("route");
+  if (requestedRoute && requestedRoute in SCHEDULE.routes) {
+    return requestedRoute;
+  }
+  if (requestedRoute) {
+    return SCHEDULE.defaultRoute;
+  }
+
+  if (useSavedRoute) {
+    try {
+      const savedRoute = window.localStorage.getItem("zchedule-route");
+      if (savedRoute && savedRoute in SCHEDULE.routes) {
+        return savedRoute;
+      }
+    } catch {
+      // Storage can be unavailable in private browsing; the default route still works.
+    }
+  }
+
+  return SCHEDULE.defaultRoute;
+}
+
+function viewFromLocation(routeKey) {
+  const route = SCHEDULE.routes[routeKey];
+  const hashView = window.location.hash.slice(1).toLowerCase().split("/").at(-1);
+  if (hashView in route.periods) {
     return hashView;
   }
   const clock = scheduleClock(new Date(), SCHEDULE.service.timeZone);
   return clock.hour < 12 ? "morning" : "afternoon";
+}
+
+function syncLocation(routeKey, view) {
+  const url = new URL(window.location.href);
+  url.searchParams.set("route", routeKey);
+  url.hash = view;
+  window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+}
+
+function originalImageFor(route, view) {
+  if (!Array.isArray(route.originalImages)) {
+    return route.originalImages[view];
+  }
+  if (route.originalImages.length === 1) {
+    return route.originalImages[0];
+  }
+  return route.originalImages[view === "morning" ? 0 : 1];
 }
 
 function minutesFromMidnight(value) {
@@ -165,6 +215,9 @@ function minutesFromMidnight(value) {
 }
 
 function timeParts(value) {
+  if (!value) {
+    return { clock: "—", period: "" };
+  }
   const [hoursText, minutes] = value.split(":");
   const hours = Number(hoursText);
   return {
@@ -174,6 +227,9 @@ function timeParts(value) {
 }
 
 function displayTime(value, includePeriod = true) {
+  if (!value) {
+    return "—";
+  }
   const { clock, period } = timeParts(value);
   return includePeriod ? `${clock} ${period}` : clock;
 }
@@ -197,42 +253,92 @@ function countdownFor(time, nowMinutes) {
 }
 
 function tripDuration(trip) {
-  const first = minutesFromMidnight(trip.stops[0].time);
-  const last = minutesFromMidnight(trip.stops.at(-1).time);
+  const firstStop = trip.stops[0];
+  const lastStop = trip.stops.at(-1);
+  if (!firstStop.time || !lastStop.time) {
+    return null;
+  }
+  const first = minutesFromMidnight(firstStop.time);
+  const last = minutesFromMidnight(lastStop.time);
   return last - first;
 }
 
 function connectionChip(connection) {
-  const service = SERVICE_STYLES[connection.service];
-  const accessibleLabel = `${displayTime(connection.time)} ${connection.direction} ${connection.train} ${service.label}`;
+  const tone = connection.service || connection.line || "regular";
+  const style = CONNECTION_STYLES[tone] || CONNECTION_STYLES.regular;
+  const badge = connection.train ? style.short : connection.direction;
+  const accessibleLabel = [
+    displayTime(connection.time),
+    style.label,
+    connection.direction,
+    connection.train ? `train ${connection.train}` : "",
+  ].filter(Boolean).join(" ");
   return `
-    <span class="train-chip train-chip--${connection.service}" aria-label="${accessibleLabel}">
+    <span class="train-chip train-chip--${tone} ${connection.train ? "" : "train-chip--compact"}" aria-label="${accessibleLabel}">
       <time datetime="${connection.time}">${displayTime(connection.time, false)}</time>
-      <span class="train-chip__number">${connection.train}</span>
-      <i aria-hidden="true">${service.short}</i>
+      ${connection.train ? `<span class="train-chip__number">${connection.train}</span>` : ""}
+      <i aria-hidden="true">${badge}</i>
     </span>
   `;
 }
 
-function connectionRow(direction, connections) {
-  const matchingConnections = connections.filter((connection) => connection.direction === direction);
+function connectionRow(group, connections) {
+  const matchingConnections = connections.filter(
+    (connection) => (connection.group || connection.direction) === group.key,
+  );
   if (!matchingConnections.length) {
     return "";
   }
 
   return `
     <div class="connection-row">
-      <span class="direction-badge direction-badge--${direction.toLowerCase()}">${direction}</span>
+      <span class="direction-badge direction-badge--${group.tone}">${group.label}</span>
       <div class="connection-chips">${matchingConnections.map(connectionChip).join("")}</div>
     </div>
   `;
 }
 
 function stopTimeline(stops) {
+  const accessibleRoute = stops
+    .map((stop) => `${stop.name} ${stop.time ? displayTime(stop.time) : stop.note || "time not listed"}`)
+    .join(", ");
+
+  if (stops.length > 4) {
+    return `
+      <details class="route-details">
+        <summary>
+          <span>${stops.length} stops</span>
+          <strong>View full route</strong>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 9 5 5 5-5" /></svg>
+        </summary>
+        <ol class="route-stop-list" aria-label="${accessibleRoute}">
+          ${stops
+            .map(
+              (stop, index) => `
+                <li class="${index === 0 ? "route-stop-list__origin" : ""} ${
+                  index === stops.length - 1 ? "route-stop-list__destination" : ""
+                }">
+                  <span class="route-stop-list__index" aria-hidden="true">${String(index + 1).padStart(2, "0")}</span>
+                  <span class="route-stop-list__name">
+                    ${stop.name}
+                    ${stop.note ? `<small>${stop.note}</small>` : ""}
+                  </span>
+                  ${
+                    stop.time
+                      ? `<time datetime="${stop.time}">${displayTime(stop.time)}</time>`
+                      : `<span class="route-stop-list__missing">—</span>`
+                  }
+                </li>
+              `,
+            )
+            .join("")}
+        </ol>
+      </details>
+    `;
+  }
+
   return `
-    <div class="route-timeline" aria-label="${stops
-      .map((stop) => `${stop.name} ${displayTime(stop.time)}`)
-      .join(", ")}">
+    <div class="route-timeline" style="--stop-count: ${stops.length}" aria-label="${accessibleRoute}">
       ${stops
         .map(
           (stop, index) => `
@@ -241,7 +347,11 @@ function stopTimeline(stops) {
             }">
               <span class="route-stop__marker" aria-hidden="true"></span>
               <span class="route-stop__name">${stop.name}</span>
-              <time datetime="${stop.time}">${displayTime(stop.time, false)}</time>
+              ${
+                stop.time
+                  ? `<time datetime="${stop.time}">${displayTime(stop.time, false)}</time>`
+                  : `<span class="route-stop__missing">—</span>`
+              }
             </div>
           `,
         )
@@ -250,11 +360,28 @@ function stopTimeline(stops) {
   `;
 }
 
-function tripCard(trip, index, period, nextTrip) {
+function connectionSection(period, route, connections) {
+  if (!connections.length) {
+    return "";
+  }
+
+  return `
+    <section class="connections" aria-label="${period.connectionDescription}">
+      <div class="connections__heading">
+        <span>${period.connectionLabel}</span>
+        <span>${connections.length} connections</span>
+      </div>
+      ${route.connectionGroups.map((group) => connectionRow(group, connections)).join("")}
+    </section>
+  `;
+}
+
+function tripCard(trip, index, period, route, nextTrip) {
   const origin = trip.stops[0];
   const destination = trip.stops.at(-1);
   const departure = timeParts(origin.time);
   const arrival = timeParts(destination.time);
+  const duration = tripDuration(trip);
   const isNext = nextTrip?.id === trip.id;
 
   return `
@@ -269,25 +396,22 @@ function tripCard(trip, index, period, nextTrip) {
           <time datetime="${origin.time}">${departure.clock}<small>${departure.period}</small></time>
         </div>
         <div class="trip-card__arrow" aria-hidden="true">
-          <span>${tripDuration(trip)} min</span>
+          <span>${duration === null ? "No ETA" : `${duration} min`}</span>
           <svg viewBox="0 0 64 16"><path d="M1 8h60m-7-6 7 6-7 6" /></svg>
         </div>
         <div class="trip-card__arrival">
           <p>Arrive ${destination.name}</p>
-          <time datetime="${destination.time}">${arrival.clock}<small>${arrival.period}</small></time>
+          ${
+            destination.time
+              ? `<time datetime="${destination.time}">${arrival.clock}<small>${arrival.period}</small></time>`
+              : `<span class="trip-card__missing-time" title="${destination.note || "Time not listed"}">—</span>`
+          }
         </div>
       </header>
 
       ${stopTimeline(trip.stops)}
 
-      <section class="connections" aria-label="${period.connectionDescription}">
-        <div class="connections__heading">
-          <span>${period.connectionLabel}</span>
-          <span>${trip.connections.length} connections</span>
-        </div>
-        ${connectionRow("NB", trip.connections)}
-        ${connectionRow("SB", trip.connections)}
-      </section>
+      ${connectionSection(period, route, trip.connections || [])}
     </article>
   `;
 }
@@ -328,24 +452,89 @@ function renderNext(period, nextTrip, status) {
   nextRoute.textContent = `${origin.name} → ${destination.name}`;
 }
 
-function renderPeriod(view) {
-  const period = SCHEDULE.periods[view];
+function renderLegend(route) {
+  const items = route.legends || [];
+  legend.hidden = items.length === 0;
+  legend.innerHTML = items
+    .map(
+      (item) => `
+        <span><i class="service-badge service-badge--${item.tone}">${item.short}</i>${item.label}</span>
+      `,
+    )
+    .join("");
+}
+
+function formatEffectiveDate(value) {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "2-digit",
+    year: "numeric",
+  })
+    .format(new Date(`${value}T00:00:00`))
+    .toUpperCase();
+}
+
+function renderPeriod(routeKey, view) {
+  const route = SCHEDULE.routes[routeKey];
+  const period = route.periods[view];
   const status = serviceDayStatus(new Date(), SCHEDULE.service);
   const nextTrip = status.active ? nextTripFor(period, status.minutes) : null;
+  const expandedTrips = [...tripList.querySelectorAll(".route-details[open]")]
+    .map((details) => details.closest(".trip-card")?.id)
+    .filter(Boolean);
 
-  periodTitle.textContent = period.label;
+  panel.dataset.route = routeKey;
+  periodTitle.textContent = route.label;
   periodKicker.textContent = period.kicker;
   tripCount.textContent = `${period.trips.length} rides`;
-  tripList.innerHTML = period.trips.map((trip, index) => tripCard(trip, index, period, nextTrip)).join("");
+  routeContext.textContent = `${route.label.toUpperCase()} · ${
+    route.effectiveDate ? formatEffectiveDate(route.effectiveDate) : "WEEKDAY SERVICE"
+  }`;
+  renderLegend(route);
+  tripList.innerHTML = period.trips
+    .map((trip, index) => tripCard(trip, index, period, route, nextTrip))
+    .join("");
+  expandedTrips.forEach((tripId) => {
+    document.getElementById(tripId)?.querySelector(".route-details")?.setAttribute("open", "");
+  });
   renderNext(period, nextTrip, status);
 }
 
-function applyView(view, { syncHash = true, focusTab = false } = {}) {
-  if (!(view in SCHEDULE.periods)) {
+function refreshLiveState() {
+  const period = SCHEDULE.routes[currentRouteKey].periods[currentView];
+  const status = serviceDayStatus(new Date(), SCHEDULE.service);
+  const nextTrip = status.active ? nextTripFor(period, status.minutes) : null;
+
+  tripList.querySelectorAll(".trip-card").forEach((card) => {
+    const isNext = card.id === nextTrip?.id;
+    card.classList.toggle("trip-card--next", isNext);
+    const rideLabel = card.querySelector(".ride-index span");
+    if (rideLabel) {
+      rideLabel.textContent = isNext ? "NEXT" : "RIDE";
+    }
+  });
+
+  renderNext(period, nextTrip, status);
+}
+
+function applySelection(routeKey, view, { syncUrl = true, focusTab = false } = {}) {
+  if (!(routeKey in SCHEDULE.routes)) {
     return;
   }
 
+  const route = SCHEDULE.routes[routeKey];
+  if (!(view in route.periods)) {
+    view = viewFromLocation(routeKey);
+  }
+
+  currentRouteKey = routeKey;
   currentView = view;
+  routeButtons.forEach((button) => {
+    button.setAttribute("aria-pressed", String(button.dataset.route === routeKey));
+  });
+
+  morningTabLabel.textContent = route.periods.morning.label;
+  afternoonTabLabel.textContent = route.periods.afternoon.label;
   tabs.forEach((tab) => {
     const selected = tab.dataset.view === view;
     tab.setAttribute("aria-selected", String(selected));
@@ -356,16 +545,28 @@ function applyView(view, { syncHash = true, focusTab = false } = {}) {
   });
 
   panel.setAttribute("aria-labelledby", `${view}-tab`);
-  renderPeriod(view);
+  renderPeriod(routeKey, view);
 
-  if (syncHash && window.location.hash !== `#${view}`) {
-    window.history.replaceState(null, "", `#${view}`);
+  try {
+    window.localStorage.setItem("zchedule-route", routeKey);
+  } catch {
+    // The route remains available for this visit if storage is unavailable.
+  }
+
+  if (syncUrl) {
+    syncLocation(routeKey, view);
   }
 }
 
+routeButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    applySelection(button.dataset.route, currentView);
+  });
+});
+
 tabs.forEach((tab, index) => {
   tab.addEventListener("click", () => {
-    applyView(tab.dataset.view);
+    applySelection(currentRouteKey, tab.dataset.view);
   });
 
   tab.addEventListener("keydown", (event) => {
@@ -376,18 +577,24 @@ tabs.forEach((tab, index) => {
     event.preventDefault();
     const direction = event.key === "ArrowRight" ? 1 : -1;
     const nextIndex = (index + direction + tabs.length) % tabs.length;
-    applyView(tabs[nextIndex].dataset.view, { focusTab: true });
+    applySelection(currentRouteKey, tabs[nextIndex].dataset.view, { focusTab: true });
   });
 });
 
-window.addEventListener("hashchange", () => {
-  const hashView = window.location.hash.slice(1).toLowerCase();
-  if (hashView in SCHEDULE.periods) {
-    applyView(hashView, { syncHash: false });
-  }
-});
+function applyLocationState() {
+  const routeKey = routeFromLocation({ useSavedRoute: false });
+  applySelection(routeKey, viewFromLocation(routeKey), { syncUrl: false });
+}
+
+window.addEventListener("hashchange", applyLocationState);
+window.addEventListener("popstate", applyLocationState);
 
 fullViewButton.addEventListener("click", () => {
+  const route = SCHEDULE.routes[currentRouteKey];
+  const period = route.periods[currentView];
+  originalDialogTitle.textContent = `${route.label} · ${period.label} original`;
+  originalImage.src = originalImageFor(route, currentView);
+  originalImage.alt = `${route.label} ${period.label} original timetable`;
   fullScheduleDialog.showModal();
 });
 
@@ -461,13 +668,6 @@ if ("serviceWorker" in navigator) {
   });
 }
 
-effectiveDate.textContent = new Intl.DateTimeFormat("en-US", {
-  month: "short",
-  day: "2-digit",
-  year: "numeric",
-})
-  .format(new Date(`${SCHEDULE.effectiveDate}T00:00:00`))
-  .toUpperCase();
-
-applyView(viewFromLocation());
-window.setInterval(() => renderPeriod(currentView), 60_000);
+const initialRoute = routeFromLocation();
+applySelection(initialRoute, viewFromLocation(initialRoute));
+window.setInterval(refreshLiveState, 60_000);

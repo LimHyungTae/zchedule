@@ -8,7 +8,7 @@
     <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
     <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
     <meta name="referrer" content="no-referrer">
-    <meta name="description" content="Morning and afternoon timetable, one tap away.">
+    <meta name="description" content="Weekday shuttle routes and timetables, one tap away.">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -16,12 +16,11 @@
 
     <title>Zchedule</title>
 
-    <link rel="manifest" href="./manifest.webmanifest">
+    <link rel="manifest" href="./manifest.webmanifest?v=6">
     <link rel="icon" href="./assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="./assets/icon-192.png">
-    <link rel="preload" href="./time_table.png" as="image" type="image/png">
-    <link rel="stylesheet" href="./styles.css">
-    <script src="./app.js" type="module"></script>
+    <link rel="stylesheet" href="./styles.css?v=6">
+    <script src="./app.js?v=6" type="module"></script>
   </head>
 
   <body>
@@ -38,9 +37,62 @@
 
       <main>
         <section class="hero" aria-labelledby="hero-title">
-          <p class="eyebrow">PERSONAL TIMETABLE · <time id="effective-date">JAN 05, 2026</time></p>
+          <p class="eyebrow">PERSONAL TIMETABLE · <span id="route-context">HILLSDALE · JAN 05, 2026</span></p>
           <h1 id="hero-title">The right ride, right away.</h1>
           <p>See the next run, every stop, and each train connection at a glance.</p>
+        </section>
+
+        <section class="route-picker" aria-labelledby="route-picker-title">
+          <div class="route-picker__heading">
+            <p id="route-picker-title">CHOOSE YOUR ROUTE</p>
+            <span>4 routes</span>
+          </div>
+          <div class="route-options" role="group" aria-label="Choose a shuttle route">
+            <button
+              class="route-option"
+              type="button"
+              data-route="hillsdale"
+              data-testid="route-hillsdale"
+              aria-pressed="true"
+              aria-controls="schedule-panel"
+            >
+              <span class="route-option__index" aria-hidden="true">01</span>
+              <span class="route-option__label">Hillsdale</span>
+            </button>
+            <button
+              class="route-option"
+              type="button"
+              data-route="north-foster-city"
+              data-testid="route-north-foster-city"
+              aria-pressed="false"
+              aria-controls="schedule-panel"
+            >
+              <span class="route-option__index" aria-hidden="true">02</span>
+              <span class="route-option__label">North Foster City</span>
+            </button>
+            <button
+              class="route-option"
+              type="button"
+              data-route="fremont"
+              data-testid="route-fremont"
+              aria-pressed="false"
+              aria-controls="schedule-panel"
+            >
+              <span class="route-option__index" aria-hidden="true">03</span>
+              <span class="route-option__label">Fremont</span>
+            </button>
+            <button
+              class="route-option"
+              type="button"
+              data-route="bart"
+              data-testid="route-bart"
+              aria-pressed="false"
+              aria-controls="schedule-panel"
+            >
+              <span class="route-option__index" aria-hidden="true">04</span>
+              <span class="route-option__label">BART</span>
+            </button>
+          </div>
         </section>
 
         <div class="tab-dock">
@@ -57,7 +109,7 @@
             >
               <span class="period-tab__icon" aria-hidden="true">☼</span>
               <span>
-                <span class="period-tab__label">Morning</span>
+                <span class="period-tab__label" id="morning-tab-label">Morning</span>
                 <span class="period-tab__meta">AM</span>
               </span>
             </button>
@@ -74,7 +126,7 @@
             >
               <span class="period-tab__icon" aria-hidden="true">◐</span>
               <span>
-                <span class="period-tab__label">Afternoon</span>
+                <span class="period-tab__label" id="afternoon-tab-label">Afternoon</span>
                 <span class="period-tab__meta">PM</span>
               </span>
             </button>
@@ -116,11 +168,7 @@
             </button>
           </div>
 
-          <div class="legend" aria-label="Train service legend">
-            <span><i class="service-badge service-badge--regular">R</i>Regular</span>
-            <span><i class="service-badge service-badge--bullet">B</i>Bullet</span>
-            <span><i class="service-badge service-badge--limited">L</i>Limited</span>
-          </div>
+          <div class="legend" id="legend" aria-label="Transit connection legend"></div>
 
           <div class="trip-list" id="trip-list" role="list" aria-live="polite"></div>
         </section>
@@ -141,8 +189,8 @@
 
         <noscript>
           <section class="noscript-card">
-            <p>Turn on JavaScript to use the Morning and Afternoon tabs.</p>
-            <a href="./time_table.png">Open the original timetable</a>
+            <p>Turn on JavaScript to switch routes and time periods.</p>
+            <a href="./original_images/hillsdale.png">Open the Hillsdale timetable</a>
           </section>
         </noscript>
       </main>
@@ -157,7 +205,7 @@
       <div class="full-dialog__header">
         <div>
           <p class="schedule-card__eyebrow">ORIGINAL</p>
-          <h2 id="dialog-title">Original timetable</h2>
+          <h2 id="dialog-title">Hillsdale · Morning original</h2>
         </div>
         <form method="dialog">
           <button class="dialog-close" type="submit" aria-label="Close original timetable">
@@ -168,7 +216,7 @@
         </form>
       </div>
       <div class="full-dialog__scroller">
-        <img src="./time_table.png" alt="Complete Morning and Afternoon timetable">
+        <img id="original-image" src="./original_images/hillsdale.png" alt="Hillsdale original timetable">
       </div>
     </dialog>
 

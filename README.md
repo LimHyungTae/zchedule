@@ -1,6 +1,6 @@
 # Zchedule
 
-A small, installable timetable viewer with separate Morning and Afternoon views.
+A small, installable timetable viewer for Hillsdale, North Foster City, Fremont, and BART shuttle routes.
 
 Made by Hyungtae Lim.
 
@@ -20,12 +20,28 @@ Run the calendar checks with `npm test`.
 
 ## Update the timetable
 
-1. Replace `time_table.png` with the new source image, keeping the same filename.
-2. Update the structured times in `schedule-data.js` so the cards match the source.
+1. Replace the matching source image in `original_images/`, keeping its normalized filename:
+   - `hillsdale.png`
+   - `north-foster-city-morning.png`
+   - `north-foster-city-afternoon.png`
+   - `fremont.png`
+   - `bart.png`
+2. Update the route and structured times in `schedule-data.js` so the cards match the source.
 3. Commit and push to `main`.
-4. Reopen the app while online. The newest cards and source image replace the offline copy automatically.
+4. Reopen the app while online. The newest cards and source images replace the offline copy automatically.
 
-The source image remains available through **View original** for visual verification.
+The source image for the selected route and period remains available through **View original** for visual verification.
+
+## Route links
+
+The selected route is stored on the device and can also be opened directly:
+
+- Hillsdale: `?route=hillsdale#morning`
+- North Foster City: `?route=north-foster-city#morning`
+- Fremont: `?route=fremont#morning`
+- BART: `?route=bart#morning`
+
+Change `#morning` to `#afternoon` for the second service period. Fremont and BART label that period **Evening** in the app to match their source timetables.
 
 ## Service days
 
@@ -46,8 +62,8 @@ Open the published page and tap **Install app**. Zchedule chooses the right flow
 
 After installation, launch Zchedule from its Home Screen icon.
 
-Long-pressing the icon may also expose Morning and Afternoon shortcuts on supported launchers.
+Long-pressing the icon may also expose Morning and PM shortcuts for the most recently selected route on supported launchers.
 
 ## Privacy note
 
-The page asks search engines not to index or archive it and does not include analytics or social metadata. The published URL and image are still publicly accessible to anyone who knows the address.
+The page asks search engines not to index or archive it and does not include analytics or social metadata. The published URL and original images are still publicly accessible to anyone who knows the address.

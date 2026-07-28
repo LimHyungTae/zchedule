@@ -1,5 +1,5 @@
-const SHELL_CACHE = "zchedule-shell-v5";
-const DATA_CACHE = "zchedule-data-v1";
+const SHELL_CACHE = "zchedule-shell-v6";
+const DATA_CACHE = "zchedule-data-v2";
 const CACHE_PREFIX = "zchedule-";
 
 const scopedURL = (path) => new URL(path, self.registration.scope).toString();
@@ -7,11 +7,11 @@ const scopedURL = (path) => new URL(path, self.registration.scope).toString();
 const SHELL_ASSETS = [
   "./",
   "./index.html",
-  "./styles.css",
-  "./app.js",
-  "./schedule-data.js",
-  "./service-calendar.js",
-  "./manifest.webmanifest",
+  "./styles.css?v=6",
+  "./app.js?v=6",
+  "./schedule-data.js?v=6",
+  "./service-calendar.js?v=6",
+  "./manifest.webmanifest?v=6",
   "./assets/icon.svg",
   "./assets/icon-192.png",
   "./assets/icon-512.png",
@@ -19,7 +19,13 @@ const SHELL_ASSETS = [
 ].map(scopedURL);
 
 const INDEX_URL = scopedURL("./index.html");
-const SCHEDULE_URL = scopedURL("./time_table.png");
+const ORIGINAL_URLS = [
+  "./original_images/hillsdale.png",
+  "./original_images/north-foster-city-morning.png",
+  "./original_images/north-foster-city-afternoon.png",
+  "./original_images/fremont.png",
+  "./original_images/bart.png",
+].map(scopedURL);
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -27,16 +33,20 @@ self.addEventListener("install", (event) => {
       caches.open(SHELL_CACHE).then((cache) => cache.addAll(SHELL_ASSETS)),
       caches
         .open(DATA_CACHE)
-        .then(async (cache) => {
-          try {
-            const response = await fetch(SCHEDULE_URL, { cache: "reload" });
-            if (response.ok) {
-              await cache.put(SCHEDULE_URL, response);
-            }
-          } catch {
-            // The schedule is cached on its first successful online request instead.
-          }
-        }),
+        .then((cache) =>
+          Promise.all(
+            ORIGINAL_URLS.map(async (url) => {
+              try {
+                const response = await fetch(url, { cache: "reload" });
+                if (response.ok) {
+                  await cache.put(url, response);
+                }
+              } catch {
+                // Each source image is cached after its first successful request instead.
+              }
+            }),
+          ),
+        ),
     ]).then(() => self.skipWaiting()),
   );
 });
@@ -94,7 +104,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  if (url.href === SCHEDULE_URL) {
+  if (ORIGINAL_URLS.includes(url.href)) {
     event.respondWith(networkFirst(request, DATA_CACHE));
     return;
   }

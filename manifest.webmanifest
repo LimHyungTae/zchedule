@@ -2,7 +2,7 @@
   "id": "./",
   "name": "Zchedule",
   "short_name": "Zchedule",
-  "description": "Morning and afternoon timetable, one tap away.",
+  "description": "Weekday shuttle routes and timetables, one tap away.",
   "lang": "en",
   "start_url": "./",
   "scope": "./",
@@ -45,8 +45,8 @@
       ]
     },
     {
-      "name": "Afternoon",
-      "short_name": "Afternoon",
+      "name": "PM schedule",
+      "short_name": "PM",
       "url": "./#afternoon",
       "icons": [
         {
