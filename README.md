@@ -2,7 +2,7 @@
 
 A small, installable timetable viewer for Hillsdale, North Foster City, Fremont, and BART shuttle routes.
 
-Made by Hyungtae Lim.
+Made by Hyungtae "Hugo" Lim.
 
 **Live app:** [https://limhyungtae.github.io/zchedule/](https://limhyungtae.github.io/zchedule/)
 

@@ -1,17 +1,20 @@
 :root {
-  --ink: #172426;
-  --muted: #667678;
+  --ink: #0d1212;
+  --muted: rgba(13, 18, 18, 0.7);
   --brand: #34484a;
-  --brand-deep: #243537;
+  --brand-deep: #0d1212;
+  --brand-mid: #5b8279;
+  --brand-cyan: #64d5b3;
   --mint: #c4dbd4;
-  --mint-soft: #e7f0ed;
-  --surface: #fbfcfb;
-  --canvas: #edf2ef;
-  --line: #d9e2de;
+  --aloe: #d3e4df;
+  --mint-soft: rgba(211, 228, 223, 0.45);
+  --surface: #fff;
+  --canvas: #f4f7f6;
+  --line: rgba(91, 130, 121, 0.2);
   --regular: #34484a;
-  --bullet: #ef5f59;
-  --limited: #8b5cf6;
-  --shadow: 0 22px 54px rgba(36, 53, 55, 0.1);
+  --bullet: #b52f3b;
+  --limited: #6d47c4;
+  --shadow: 0 20px 50px rgba(13, 18, 18, 0.09);
   --radius-xl: 28px;
   --radius-lg: 21px;
   --radius-md: 14px;
@@ -40,8 +43,8 @@ body {
   margin: 0;
   overflow-x: clip;
   background:
-    radial-gradient(circle at 100% -8%, rgba(196, 219, 212, 0.78), transparent 31rem),
-    linear-gradient(180deg, #f6f8f7 0, var(--canvas) 33rem);
+    radial-gradient(circle at 100% -8%, rgba(100, 213, 179, 0.3), transparent 31rem),
+    linear-gradient(180deg, #fff 0, #edf4f2 24rem, var(--canvas) 52rem);
 }
 
 button,
@@ -57,7 +60,7 @@ button:focus-visible,
 a:focus-visible,
 [tabindex]:focus-visible,
 summary:focus-visible {
-  outline: 3px solid #5d8f87;
+  outline: 3px solid var(--brand);
   outline-offset: 3px;
 }
 
@@ -202,8 +205,8 @@ summary:focus-visible {
 }
 
 .route-option[aria-pressed="true"] {
-  color: #eef6f3;
-  border-color: rgba(196, 219, 212, 0.22);
+  color: #fff;
+  border-color: rgba(100, 213, 179, 0.42);
   background: var(--brand);
 }
 
@@ -220,8 +223,8 @@ summary:focus-visible {
 }
 
 .route-option[aria-pressed="true"] .route-option__index {
-  color: var(--mint);
-  background: rgba(196, 219, 212, 0.13);
+  color: var(--brand-cyan);
+  background: rgba(13, 18, 18, 0.22);
 }
 
 .route-option__label {
@@ -237,7 +240,7 @@ summary:focus-visible {
   z-index: 20;
   top: 0;
   padding: 8px 0 12px;
-  background: linear-gradient(180deg, rgba(237, 242, 239, 0.98) 76%, rgba(237, 242, 239, 0));
+  background: linear-gradient(180deg, rgba(244, 247, 246, 0.98) 76%, rgba(244, 247, 246, 0));
   backdrop-filter: blur(12px);
 }
 
@@ -274,7 +277,7 @@ summary:focus-visible {
 }
 
 .period-tab[aria-selected="true"] {
-  color: var(--mint);
+  color: var(--brand-cyan);
   background: var(--brand);
   box-shadow: 0 8px 18px rgba(36, 53, 55, 0.2);
 }
@@ -290,7 +293,7 @@ summary:focus-visible {
 }
 
 .period-tab[aria-selected="true"] .period-tab__icon {
-  background: rgba(196, 219, 212, 0.13);
+  background: rgba(100, 213, 179, 0.12);
 }
 
 .period-tab__label,
@@ -322,7 +325,7 @@ summary:focus-visible {
   border-radius: 23px;
   color: var(--mint);
   background:
-    radial-gradient(circle at 90% 0, rgba(196, 219, 212, 0.14), transparent 17rem),
+    radial-gradient(circle at 90% 0, rgba(100, 213, 179, 0.16), transparent 17rem),
     var(--brand);
   box-shadow: 0 22px 48px rgba(36, 53, 55, 0.18);
 }
@@ -352,7 +355,7 @@ summary:focus-visible {
 .next-ride__signal span {
   width: 4px;
   border-radius: 4px;
-  background: var(--mint);
+  background: var(--brand-cyan);
   animation: signal 1.5s ease-in-out infinite;
 }
 
@@ -392,7 +395,7 @@ summary:focus-visible {
 
 .next-ride__copy > p:first-child {
   margin: 0;
-  color: rgba(228, 238, 234, 0.64);
+  color: rgba(211, 228, 223, 0.78);
   font-size: 0.62rem;
   font-weight: 760;
   letter-spacing: 0.15em;
@@ -406,7 +409,7 @@ summary:focus-visible {
 }
 
 .next-ride__main time {
-  color: #edf6f2;
+  color: #fff;
   font-size: clamp(1.8rem, 7vw, 2.7rem);
   font-weight: 760;
   line-height: 1;
@@ -418,7 +421,7 @@ summary:focus-visible {
   padding: 5px 8px;
   border-radius: 999px;
   color: var(--brand-deep);
-  background: var(--mint);
+  background: var(--brand-cyan);
   font-size: 0.66rem;
   font-weight: 760;
 }
@@ -442,7 +445,7 @@ summary:focus-visible {
   padding: 21px;
   border: 1px solid rgba(52, 72, 74, 0.1);
   border-radius: var(--radius-xl);
-  background: rgba(251, 252, 251, 0.9);
+  background: rgba(255, 255, 255, 0.92);
   box-shadow: var(--shadow);
 }
 
@@ -600,11 +603,11 @@ summary:focus-visible {
 
 .trip-card--next {
   border-color: rgba(52, 72, 74, 0.56);
-  box-shadow: 0 12px 28px rgba(36, 53, 55, 0.12), inset 3px 0 var(--brand);
+  box-shadow: 0 12px 28px rgba(13, 18, 18, 0.12), inset 4px 0 var(--brand-cyan);
 }
 
 .trip-card--next .ride-index {
-  color: var(--mint);
+  color: var(--brand-cyan);
   background: var(--brand);
 }
 
@@ -680,7 +683,7 @@ summary:focus-visible {
   gap: 1px;
   align-self: center;
   justify-items: center;
-  color: #9aabaa;
+  color: var(--muted);
 }
 
 .trip-card__arrow span {
@@ -713,7 +716,7 @@ summary:focus-visible {
   right: calc(50% / var(--stop-count, 4));
   left: calc(50% / var(--stop-count, 4));
   height: 2px;
-  background: linear-gradient(90deg, var(--brand), #9db4ad);
+  background: linear-gradient(90deg, var(--brand), var(--brand-mid));
   content: "";
 }
 
@@ -869,7 +872,7 @@ summary:focus-visible {
   padding: 2px 5px;
   border-radius: 999px;
   color: var(--brand);
-  background: rgba(196, 219, 212, 0.72);
+  background: var(--aloe);
   font-size: 0.49rem;
   font-weight: 760;
   white-space: nowrap;
@@ -892,7 +895,7 @@ summary:focus-visible {
 .connections {
   padding: 12px;
   border-radius: 15px;
-  background: #f1f5f3;
+  background: var(--mint-soft);
 }
 
 .connections__heading {
@@ -910,7 +913,7 @@ summary:focus-visible {
 }
 
 .connections__heading span:last-child {
-  color: #82908f;
+  color: var(--muted);
   font-size: 0.54rem;
   font-weight: 650;
 }
@@ -965,7 +968,7 @@ summary:focus-visible {
   gap: 5px;
   min-height: 27px;
   padding: 3px 4px 3px 8px;
-  border: 1px solid #dbe4e0;
+  border: 1px solid var(--line);
   border-radius: 9px;
   color: var(--brand-deep);
   background: #fff;
@@ -1053,7 +1056,7 @@ summary:focus-visible {
   border: 0;
   border-radius: 12px;
   color: var(--brand-deep);
-  background: var(--mint);
+  background: var(--brand-cyan);
   font-size: 0.78rem;
   font-weight: 760;
   cursor: pointer;
@@ -1090,7 +1093,7 @@ footer {
   justify-content: center;
   gap: 8px;
   padding: 30px 0 4px;
-  color: #7b898b;
+  color: var(--muted);
   font-size: 0.66rem;
   letter-spacing: 0.04em;
 }
@@ -1101,7 +1104,7 @@ footer {
   height: 21px;
   place-items: center;
   border-radius: 6px;
-  color: var(--mint);
+  color: var(--brand-cyan);
   background: var(--brand);
   font-size: 0.65rem;
   font-weight: 760;
@@ -1275,7 +1278,7 @@ footer {
 .full-dialog__scroller {
   max-height: calc(92dvh - 79px);
   overflow: auto;
-  background: #dfe8e4;
+  background: var(--aloe);
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
 }

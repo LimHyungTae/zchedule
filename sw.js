@@ -1,4 +1,4 @@
-const SHELL_CACHE = "zchedule-shell-v6";
+const SHELL_CACHE = "zchedule-shell-v7";
 const DATA_CACHE = "zchedule-data-v2";
 const CACHE_PREFIX = "zchedule-";
 
@@ -7,11 +7,11 @@ const scopedURL = (path) => new URL(path, self.registration.scope).toString();
 const SHELL_ASSETS = [
   "./",
   "./index.html",
-  "./styles.css?v=6",
-  "./app.js?v=6",
-  "./schedule-data.js?v=6",
-  "./service-calendar.js?v=6",
-  "./manifest.webmanifest?v=6",
+  "./styles.css?v=7",
+  "./app.js?v=7",
+  "./schedule-data.js?v=7",
+  "./service-calendar.js?v=7",
+  "./manifest.webmanifest?v=7",
   "./assets/icon.svg",
   "./assets/icon-192.png",
   "./assets/icon-512.png",

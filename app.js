@@ -1,5 +1,5 @@
-import { SCHEDULE } from "./schedule-data.js?v=6";
-import { scheduleClock, serviceDayStatus } from "./service-calendar.js?v=6";
+import { SCHEDULE } from "./schedule-data.js?v=7";
+import { scheduleClock, serviceDayStatus } from "./service-calendar.js?v=7";
 
 const CONNECTION_STYLES = {
   regular: { short: "R", label: "Regular" },
