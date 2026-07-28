@@ -1,5 +1,11 @@
 export const SCHEDULE = {
   effectiveDate: "2026-01-05",
+  service: {
+    timeZone: "America/Los_Angeles",
+    extraClosureDates: [
+      // Add company-specific closures as { date: "YYYY-MM-DD", label: "Company holiday" }.
+    ],
+  },
   periods: {
     morning: {
       label: "Morning",

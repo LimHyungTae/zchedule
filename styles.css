@@ -281,7 +281,8 @@ summary:focus-visible {
   animation-delay: 240ms;
 }
 
-.next-ride[data-state="finished"] .next-ride__signal span {
+.next-ride[data-state="finished"] .next-ride__signal span,
+.next-ride[data-state="inactive"] .next-ride__signal span {
   height: 4px;
   animation: none;
   opacity: 0.38;
@@ -333,7 +334,8 @@ summary:focus-visible {
   font-weight: 760;
 }
 
-.next-ride[data-state="finished"] .next-ride__main span {
+.next-ride[data-state="finished"] .next-ride__main span,
+.next-ride[data-state="inactive"] .next-ride__main span {
   color: var(--mint);
   background: rgba(196, 219, 212, 0.12);
 }

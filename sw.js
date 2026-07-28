@@ -1,4 +1,4 @@
-const SHELL_CACHE = "zchedule-shell-v4";
+const SHELL_CACHE = "zchedule-shell-v5";
 const DATA_CACHE = "zchedule-data-v1";
 const CACHE_PREFIX = "zchedule-";
 
@@ -10,6 +10,7 @@ const SHELL_ASSETS = [
   "./styles.css",
   "./app.js",
   "./schedule-data.js",
+  "./service-calendar.js",
   "./manifest.webmanifest",
   "./assets/icon.svg",
   "./assets/icon-192.png",

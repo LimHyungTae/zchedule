@@ -1,4 +1,5 @@
 import { SCHEDULE } from "./schedule-data.js";
+import { scheduleClock, serviceDayStatus } from "./service-calendar.js";
 
 const SERVICE_STYLES = {
   regular: { short: "R", label: "Regular" },
@@ -14,6 +15,7 @@ const tripCount = document.querySelector("#trip-count");
 const tripList = document.querySelector("#trip-list");
 const effectiveDate = document.querySelector("#effective-date");
 const nextRide = document.querySelector("#next-ride");
+const nextLabel = document.querySelector("#next-label");
 const nextTime = document.querySelector("#next-time");
 const nextCountdown = document.querySelector("#next-countdown");
 const nextRoute = document.querySelector("#next-route");
@@ -153,7 +155,8 @@ function viewFromLocation() {
   if (hashView in SCHEDULE.periods) {
     return hashView;
   }
-  return new Date().getHours() < 12 ? "morning" : "afternoon";
+  const clock = scheduleClock(new Date(), SCHEDULE.service.timeZone);
+  return clock.hour < 12 ? "morning" : "afternoon";
 }
 
 function minutesFromMidnight(value) {
@@ -175,15 +178,12 @@ function displayTime(value, includePeriod = true) {
   return includePeriod ? `${clock} ${period}` : clock;
 }
 
-function nextTripFor(period) {
-  const now = new Date();
-  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+function nextTripFor(period, nowMinutes) {
   return period.trips.find((trip) => minutesFromMidnight(trip.stops[0].time) >= nowMinutes) ?? null;
 }
 
-function countdownFor(time) {
-  const now = new Date();
-  const difference = minutesFromMidnight(time) - (now.getHours() * 60 + now.getMinutes());
+function countdownFor(time, nowMinutes) {
+  const difference = minutesFromMidnight(time) - nowMinutes;
   if (difference <= 1) {
     return "Leaving soon";
   }
@@ -292,9 +292,26 @@ function tripCard(trip, index, period, nextTrip) {
   `;
 }
 
-function renderNext(period, nextTrip) {
+function renderNext(period, nextTrip, status) {
+  if (!status.active) {
+    const holidaySuffix = status.observed ? " (observed)" : "";
+    const detail = status.reason === "weekend"
+      ? "Weekend · Weekday schedule only."
+      : `${status.label}${holidaySuffix} · Weekday schedule only.`;
+
+    nextRide.dataset.state = "inactive";
+    nextLabel.textContent = "SERVICE STATUS";
+    nextTime.removeAttribute("datetime");
+    nextTime.textContent = "—";
+    nextCountdown.textContent = "No service today";
+    nextRoute.textContent = detail;
+    return;
+  }
+
   if (!nextTrip) {
     nextRide.dataset.state = "finished";
+    nextLabel.textContent = "SERVICE STATUS";
+    nextTime.removeAttribute("datetime");
     nextTime.textContent = "—";
     nextCountdown.textContent = currentView === "morning" ? "Morning service ended" : "Service ended today";
     nextRoute.textContent = "Browse every scheduled run below.";
@@ -304,20 +321,23 @@ function renderNext(period, nextTrip) {
   const origin = nextTrip.stops[0];
   const destination = nextTrip.stops.at(-1);
   nextRide.dataset.state = "active";
+  nextLabel.textContent = "UP NEXT · SCHEDULED TIME";
+  nextTime.dateTime = origin.time;
   nextTime.textContent = displayTime(origin.time);
-  nextCountdown.textContent = countdownFor(origin.time);
+  nextCountdown.textContent = countdownFor(origin.time, status.minutes);
   nextRoute.textContent = `${origin.name} → ${destination.name}`;
 }
 
 function renderPeriod(view) {
   const period = SCHEDULE.periods[view];
-  const nextTrip = nextTripFor(period);
+  const status = serviceDayStatus(new Date(), SCHEDULE.service);
+  const nextTrip = status.active ? nextTripFor(period, status.minutes) : null;
 
   periodTitle.textContent = period.label;
   periodKicker.textContent = period.kicker;
   tripCount.textContent = `${period.trips.length} rides`;
   tripList.innerHTML = period.trips.map((trip, index) => tripCard(trip, index, period, nextTrip)).join("");
-  renderNext(period, nextTrip);
+  renderNext(period, nextTrip, status);
 }
 
 function applyView(view, { syncHash = true, focusTab = false } = {}) {

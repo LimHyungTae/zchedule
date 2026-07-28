@@ -2,6 +2,8 @@
 
 A small, installable timetable viewer with separate Morning and Afternoon views.
 
+Made by Hyungtae Lim.
+
 **Live app:** [https://limhyungtae.github.io/zchedule/](https://limhyungtae.github.io/zchedule/)
 
 ## Open locally
@@ -14,6 +16,8 @@ python3 -m http.server 4173
 
 Then open `http://127.0.0.1:4173`.
 
+Run the calendar checks with `npm test`.
+
 ## Update the timetable
 
 1. Replace `time_table.png` with the new source image, keeping the same filename.
@@ -22,6 +26,16 @@ Then open `http://127.0.0.1:4173`.
 4. Reopen the app while online. The newest cards and source image replace the offline copy automatically.
 
 The source image remains available through **View original** for visual verification.
+
+## Service days
+
+Live countdowns run on weekdays in the `America/Los_Angeles` time zone. They are disabled on weekends and observed U.S. federal holidays; the Morning and Afternoon timetables remain available to browse.
+
+For a company-specific closure, add an entry to `service.extraClosureDates` in `schedule-data.js`:
+
+```js
+{ date: "2026-12-24", label: "Company holiday" }
+```
 
 ## Install on a phone
 
