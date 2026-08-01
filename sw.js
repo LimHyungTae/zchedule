@@ -1,5 +1,5 @@
-const SHELL_CACHE = "zchedule-shell-v7";
-const DATA_CACHE = "zchedule-data-v2";
+const SHELL_CACHE = "zchedule-shell-v8";
+const DATA_CACHE = "zchedule-data-v3";
 const CACHE_PREFIX = "zchedule-";
 
 const scopedURL = (path) => new URL(path, self.registration.scope).toString();
@@ -7,11 +7,12 @@ const scopedURL = (path) => new URL(path, self.registration.scope).toString();
 const SHELL_ASSETS = [
   "./",
   "./index.html",
-  "./styles.css?v=7",
-  "./app.js?v=7",
-  "./schedule-data.js?v=7",
-  "./service-calendar.js?v=7",
-  "./manifest.webmanifest?v=7",
+  "./styles.css?v=8",
+  "./app.js?v=8",
+  "./bus-251-data.js?v=8",
+  "./schedule-data.js?v=8",
+  "./service-calendar.js?v=8",
+  "./manifest.webmanifest?v=8",
   "./assets/icon.svg",
   "./assets/icon-192.png",
   "./assets/icon-512.png",
@@ -25,6 +26,9 @@ const ORIGINAL_URLS = [
   "./original_images/north-foster-city-afternoon.png",
   "./original_images/fremont.png",
   "./original_images/bart.png",
+  "./original_images/251_weekday.png",
+  "./original_images/251_sat.png",
+  "./original_images/251_sun.png",
 ].map(scopedURL);
 
 self.addEventListener("install", (event) => {

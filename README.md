@@ -1,6 +1,6 @@
 # Zchedule
 
-A small, installable timetable viewer for Hillsdale, North Foster City, Fremont, and BART shuttle routes.
+A small, installable timetable viewer for four shuttle routes and the Route 251 Hillsdale–Foster City loop.
 
 Made by Hyungtae "Hugo" Lim.
 
@@ -26,7 +26,12 @@ Run the calendar checks with `npm test`.
    - `north-foster-city-afternoon.png`
    - `fremont.png`
    - `bart.png`
-2. Update the route and structured times in `schedule-data.js` so the cards match the source.
+   - `251_weekday.png`
+   - `251_sat.png`
+   - `251_sun.png`
+2. Update the structured times so the cards match the source:
+   - Shuttle routes live in `schedule-data.js`.
+   - Route 251 lives in `bus-251-data.js` with separate weekday, Saturday, and Sunday rows.
 3. Commit and push to `main`.
 4. Reopen the app while online. The newest cards and source images replace the offline copy automatically.
 
@@ -40,12 +45,15 @@ The selected route is stored on the device and can also be opened directly:
 - North Foster City: `?route=north-foster-city#morning`
 - Fremont: `?route=fremont#morning`
 - BART: `?route=bart#morning`
+- Route 251: `?service=251`
 
-Change `#morning` to `#afternoon` for the second service period. Fremont and BART label that period **Evening** in the app to match their source timetables.
+Change `#morning` to `#afternoon` for the second service period. Fremont and BART label that period **Evening** in the app to match their source timetables. Route 251 automatically picks its direction from the current time, and its two direction buttons can override that choice.
 
 ## Service days
 
 Live countdowns run on weekdays in the `America/Los_Angeles` time zone. They are disabled on weekends and observed U.S. federal holidays; the Morning and Afternoon timetables remain available to browse.
+
+Route 251 runs from its supplied daily tables instead: Monday–Friday, Saturday, or Sunday is selected automatically in Pacific time. Its morning view boards at Hillsdale Bay 7, while its return view boards at E Hillsdale Blvd & Foster City Blvd.
 
 For a company-specific closure, add an entry to `service.extraClosureDates` in `schedule-data.js`:
 

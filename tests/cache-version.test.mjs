@@ -17,6 +17,7 @@ test("loads one cache-busted asset graph across service-worker upgrades", async 
   const expectedAssets = [
     `./styles.css?v=${version}`,
     `./app.js?v=${version}`,
+    `./bus-251-data.js?v=${version}`,
     `./schedule-data.js?v=${version}`,
     `./service-calendar.js?v=${version}`,
     `./manifest.webmanifest?v=${version}`,

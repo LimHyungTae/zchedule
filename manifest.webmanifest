@@ -2,7 +2,7 @@
   "id": "./",
   "name": "Zchedule",
   "short_name": "Zchedule",
-  "description": "Weekday shuttle routes and timetables, one tap away.",
+  "description": "Shuttle and Route 251 timetables, one tap away.",
   "lang": "en",
   "start_url": "./",
   "scope": "./",
@@ -35,7 +35,7 @@
     {
       "name": "Morning",
       "short_name": "Morning",
-      "url": "./#morning",
+      "url": "./?service=shuttle#morning",
       "icons": [
         {
           "src": "./assets/icon-192.png",
@@ -47,7 +47,7 @@
     {
       "name": "PM schedule",
       "short_name": "PM",
-      "url": "./#afternoon",
+      "url": "./?service=shuttle#afternoon",
       "icons": [
         {
           "src": "./assets/icon-192.png",

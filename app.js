@@ -1,5 +1,11 @@
-import { SCHEDULE } from "./schedule-data.js?v=7";
-import { scheduleClock, serviceDayStatus } from "./service-calendar.js?v=7";
+import {
+  BUS_251,
+  bus251CommuteKey,
+  bus251DayKey,
+  nextBusRow,
+} from "./bus-251-data.js?v=8";
+import { SCHEDULE } from "./schedule-data.js?v=8";
+import { scheduleClock, serviceDayStatus } from "./service-calendar.js?v=8";
 
 const CONNECTION_STYLES = {
   regular: { short: "R", label: "Regular" },
@@ -11,6 +17,9 @@ const CONNECTION_STYLES = {
 
 const tabs = [...document.querySelectorAll(".period-tab")];
 const routeButtons = [...document.querySelectorAll(".route-option")];
+const serviceTabs = [...document.querySelectorAll(".service-switcher__tab")];
+const servicePanels = [...document.querySelectorAll(".service-panel")];
+const busCommuteButtons = [...document.querySelectorAll(".bus-commute-option")];
 const panel = document.querySelector("#schedule-panel");
 const periodTitle = document.querySelector("#period-title");
 const periodKicker = document.querySelector("#period-kicker");
@@ -29,6 +38,19 @@ const fullViewButton = document.querySelector("#full-view-button");
 const fullScheduleDialog = document.querySelector("#full-schedule-dialog");
 const originalDialogTitle = document.querySelector("#dialog-title");
 const originalImage = document.querySelector("#original-image");
+const busNextRide = document.querySelector("#bus-next-ride");
+const busNextLabel = document.querySelector("#bus-next-label");
+const busNextTime = document.querySelector("#bus-next-time");
+const busNextCountdown = document.querySelector("#bus-next-countdown");
+const busNextRoute = document.querySelector("#bus-next-route");
+const busPeriodKicker = document.querySelector("#bus-period-kicker");
+const busPeriodTitle = document.querySelector("#bus-period-title");
+const busTripCount = document.querySelector("#bus-trip-count");
+const busDayBadge = document.querySelector("#bus-day-badge");
+const busDayCopy = document.querySelector("#bus-day-copy");
+const busRunList = document.querySelector("#bus-run-list");
+const busOriginalButton = document.querySelector("#bus-original-button");
+const heroDescription = document.querySelector("#hero-description");
 const installCard = document.querySelector(".install-card");
 const installTitle = document.querySelector("#install-title");
 const installPlatformLabel = document.querySelector("#install-platform");
@@ -43,6 +65,12 @@ const installDialogTip = document.querySelector("#install-dialog-tip");
 
 let currentRouteKey = SCHEDULE.defaultRoute;
 let currentView = "morning";
+let currentService = "shuttle";
+let currentBusCommute = "morning";
+let busCommutePinned = false;
+let renderedBusDayKey = null;
+let renderedBusCommute = null;
+let renderedBusDate = null;
 let installPrompt = null;
 
 const standaloneMedia = window.matchMedia("(display-mode: standalone)");
@@ -182,6 +210,29 @@ function routeFromLocation({ useSavedRoute = true } = {}) {
   return SCHEDULE.defaultRoute;
 }
 
+function serviceFromLocation({ useSavedService = true } = {}) {
+  const search = new URLSearchParams(window.location.search);
+  const requestedService = search.get("service");
+  if (requestedService === "251") {
+    return "bus-251";
+  }
+  if (search.has("service") || search.has("route")) {
+    return "shuttle";
+  }
+
+  if (useSavedService) {
+    try {
+      return window.localStorage.getItem("zchedule-service") === "bus-251"
+        ? "bus-251"
+        : "shuttle";
+    } catch {
+      // The shuttle view remains the default when storage is unavailable.
+    }
+  }
+
+  return "shuttle";
+}
+
 function viewFromLocation(routeKey) {
   const route = SCHEDULE.routes[routeKey];
   const hashView = window.location.hash.slice(1).toLowerCase().split("/").at(-1);
@@ -192,10 +243,28 @@ function viewFromLocation(routeKey) {
   return clock.hour < 12 ? "morning" : "afternoon";
 }
 
+function busCommuteFromLocation({ useHash = true } = {}) {
+  const hashView = window.location.hash.slice(1).toLowerCase();
+  if (useHash && hashView in BUS_251.commutes) {
+    return hashView;
+  }
+  const clock = scheduleClock(new Date(), BUS_251.timeZone);
+  return bus251CommuteKey(clock.minutes);
+}
+
 function syncLocation(routeKey, view) {
   const url = new URL(window.location.href);
+  url.searchParams.delete("service");
   url.searchParams.set("route", routeKey);
   url.hash = view;
+  window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+}
+
+function syncBusLocation(commuteKey, { pinned = busCommutePinned } = {}) {
+  const url = new URL(window.location.href);
+  url.searchParams.set("service", "251");
+  url.searchParams.delete("route");
+  url.hash = pinned ? commuteKey : "";
   window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
 }
 
@@ -376,7 +445,15 @@ function connectionSection(period, route, connections) {
   `;
 }
 
-function tripCard(trip, index, period, route, nextTrip) {
+function tripCard(
+  trip,
+  index,
+  period,
+  route,
+  nextTrip,
+  itemLabel = "RIDE",
+  compactStopLabels = false,
+) {
   const origin = trip.stops[0];
   const destination = trip.stops.at(-1);
   const departure = timeParts(origin.time);
@@ -385,14 +462,19 @@ function tripCard(trip, index, period, route, nextTrip) {
   const isNext = nextTrip?.id === trip.id;
 
   return `
-    <article class="trip-card ${isNext ? "trip-card--next" : ""}" role="listitem" id="${trip.id}">
+    <article
+      class="trip-card ${isNext ? "trip-card--next" : ""}"
+      role="listitem"
+      id="${trip.id}"
+      data-run-index="${index}"
+    >
       <header class="trip-card__top">
         <div class="ride-index">
-          <span>${isNext ? "NEXT" : "RIDE"}</span>
+          <span>${isNext ? "NEXT" : itemLabel}</span>
           <strong>${String(index + 1).padStart(2, "0")}</strong>
         </div>
         <div class="trip-card__departure">
-          <p>Depart ${origin.name}</p>
+          <p>${compactStopLabels ? origin.cardName || origin.name : `Depart ${origin.name}`}</p>
           <time datetime="${origin.time}">${departure.clock}<small>${departure.period}</small></time>
         </div>
         <div class="trip-card__arrow" aria-hidden="true">
@@ -400,7 +482,7 @@ function tripCard(trip, index, period, route, nextTrip) {
           <svg viewBox="0 0 64 16"><path d="M1 8h60m-7-6 7 6-7 6" /></svg>
         </div>
         <div class="trip-card__arrival">
-          <p>Arrive ${destination.name}</p>
+          <p>${compactStopLabels ? destination.cardName || destination.name : `Arrive ${destination.name}`}</p>
           ${
             destination.time
               ? `<time datetime="${destination.time}">${arrival.clock}<small>${arrival.period}</small></time>`
@@ -474,6 +556,177 @@ function formatEffectiveDate(value) {
     .toUpperCase();
 }
 
+function busTripForRow(row, index, dayKey, commuteKey) {
+  const commute = BUS_251.commutes[commuteKey];
+  const stops = BUS_251.stops
+    .slice(commute.boardStopIndex, commute.destinationStopIndex + 1)
+    .map((stop, stopOffset) => ({
+      name: stop.short,
+      cardName: stop.card,
+      time: row[commute.boardStopIndex + stopOffset],
+    }));
+
+  return {
+    id: `bus-251-${dayKey}-${commuteKey}-${String(index + 1).padStart(2, "0")}`,
+    stops,
+  };
+}
+
+function renderBusNext(day, commute, nextIndex, clock) {
+  if (nextIndex < 0) {
+    busNextRide.dataset.state = "finished";
+    busNextLabel.textContent = "ROUTE 251 · SERVICE STATUS";
+    busNextTime.removeAttribute("datetime");
+    busNextTime.textContent = "—";
+    busNextCountdown.textContent = "Service ended today";
+    busNextRoute.textContent = `Browse the full ${day.label.toLowerCase()} schedule below.`;
+    return;
+  }
+
+  const row = day.rows[nextIndex];
+  const boardStop = BUS_251.stops[commute.boardStopIndex];
+  const destinationStop = BUS_251.stops[commute.destinationStopIndex];
+  const boardTime = row[commute.boardStopIndex];
+
+  busNextRide.dataset.state = "active";
+  busNextLabel.textContent = `${day.label.toUpperCase()} · UP NEXT · ROUTE 251`;
+  busNextTime.dateTime = boardTime;
+  busNextTime.textContent = displayTime(boardTime);
+  busNextCountdown.textContent = countdownFor(boardTime, clock.minutes);
+  busNextRoute.textContent = `${boardStop.short} → ${destinationStop.short}`;
+}
+
+function renderBus251() {
+  const clock = scheduleClock(new Date(), BUS_251.timeZone);
+  const dayKey = bus251DayKey(clock.weekday);
+  const day = BUS_251.days[dayKey];
+  const commute = BUS_251.commutes[currentBusCommute];
+  const nextIndex = nextBusRow(day.rows, commute.boardStopIndex, clock.minutes);
+  const trips = day.rows.map((row, index) => (
+    busTripForRow(row, index, dayKey, currentBusCommute)
+  ));
+  const nextTrip = nextIndex < 0 ? null : trips[nextIndex];
+  const expandedTrips = [...busRunList.querySelectorAll(".route-details[open]")]
+    .map((details) => details.closest(".trip-card")?.id)
+    .filter(Boolean);
+  const weekdayName = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][
+    clock.weekday
+  ];
+  const shortDate = `${[
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+  ][clock.month - 1]} ${clock.day}`;
+
+  busCommuteButtons.forEach((button) => {
+    button.setAttribute("aria-pressed", String(button.dataset.commute === currentBusCommute));
+  });
+  busPeriodKicker.textContent = `ROUTE 251 · ${day.label.toUpperCase()}`;
+  busPeriodTitle.textContent = commute.label.replace(/^To\s+/, "");
+  busTripCount.textContent = `${day.rows.length} buses`;
+  busDayBadge.textContent = weekdayName.toUpperCase();
+  busDayCopy.textContent = `${day.label} timetable selected automatically · ${shortDate}.`;
+  const renderTrip = (trip, index) => tripCard(
+    trip,
+    index,
+    { connectionDescription: "" },
+    { connectionGroups: [] },
+    nextTrip,
+    "BUS",
+    true,
+  );
+  const upcomingTrips = nextIndex > 0 ? trips.slice(nextIndex) : trips;
+  const earlierTrips = nextIndex > 0 ? trips.slice(0, nextIndex) : [];
+  busRunList.innerHTML = `
+    <details class="bus-past-runs" ${earlierTrips.length ? "" : "hidden"}>
+      <summary>
+        <span>Earlier today</span>
+        <strong>${earlierTrips.length} ${earlierTrips.length === 1 ? "bus" : "buses"}</strong>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 9 5 5 5-5" /></svg>
+      </summary>
+      <div class="bus-past-runs__list" role="list">
+        ${earlierTrips.map((trip, index) => renderTrip(trip, index)).join("")}
+      </div>
+    </details>
+    <div class="bus-upcoming-runs" role="list">
+      ${upcomingTrips
+        .map((trip, offset) => renderTrip(trip, nextIndex > 0 ? nextIndex + offset : offset))
+        .join("")}
+    </div>
+  `;
+  expandedTrips.forEach((tripId) => {
+    document.getElementById(tripId)?.querySelector(".route-details")?.setAttribute("open", "");
+  });
+  routeContext.textContent = `251 BUS · ${weekdayName.toUpperCase()} SERVICE`;
+  renderedBusDayKey = dayKey;
+  renderedBusCommute = currentBusCommute;
+  renderedBusDate = clock.date;
+  renderBusNext(day, commute, nextIndex, clock);
+}
+
+function refreshBus251LiveState() {
+  const clock = scheduleClock(new Date(), BUS_251.timeZone);
+  const dayKey = bus251DayKey(clock.weekday);
+
+  if (
+    clock.date !== renderedBusDate
+    || dayKey !== renderedBusDayKey
+    || currentBusCommute !== renderedBusCommute
+    || !busRunList.childElementCount
+  ) {
+    renderBus251();
+    return;
+  }
+
+  const day = BUS_251.days[dayKey];
+  const commute = BUS_251.commutes[currentBusCommute];
+  const nextIndex = nextBusRow(day.rows, commute.boardStopIndex, clock.minutes);
+  const nextId = nextIndex < 0
+    ? null
+    : `bus-251-${dayKey}-${currentBusCommute}-${String(nextIndex + 1).padStart(2, "0")}`;
+
+  if (nextIndex >= 0 && !busRunList.contains(document.activeElement)) {
+    const earlier = busRunList.querySelector(".bus-past-runs");
+    const earlierList = busRunList.querySelector(".bus-past-runs__list");
+    const upcomingList = busRunList.querySelector(".bus-upcoming-runs");
+    const cards = [...busRunList.querySelectorAll(".trip-card")]
+      .sort((left, right) => Number(left.dataset.runIndex) - Number(right.dataset.runIndex));
+
+    cards.forEach((card) => {
+      const runIndex = Number(card.dataset.runIndex);
+      const target = runIndex < nextIndex ? earlierList : upcomingList;
+      if (card.parentElement === target) {
+        return;
+      }
+
+      if (target === earlierList) {
+        target.append(card);
+        return;
+      }
+
+      const followingCard = [...upcomingList.children]
+        .find((candidate) => Number(candidate.dataset.runIndex) > runIndex);
+      target.insertBefore(card, followingCard || null);
+    });
+
+    const earlierCount = earlierList.querySelectorAll(".trip-card").length;
+    earlier.hidden = earlierCount === 0;
+    earlier.querySelector("summary strong").textContent = `${earlierCount} ${
+      earlierCount === 1 ? "bus" : "buses"
+    }`;
+  }
+
+  busRunList.querySelectorAll(".trip-card").forEach((card) => {
+    const isNext = card.id === nextId;
+    card.classList.toggle("trip-card--next", isNext);
+    const rideLabel = card.querySelector(".ride-index span");
+    if (rideLabel) {
+      rideLabel.textContent = isNext ? "NEXT" : "BUS";
+    }
+  });
+
+  renderBusNext(day, commute, nextIndex, clock);
+}
+
 function renderPeriod(routeKey, view) {
   const route = SCHEDULE.routes[routeKey];
   const period = route.periods[view];
@@ -501,6 +754,19 @@ function renderPeriod(routeKey, view) {
 }
 
 function refreshLiveState() {
+  if (currentService === "bus-251") {
+    if (!busCommutePinned) {
+      const clock = scheduleClock(new Date(), BUS_251.timeZone);
+      const automaticCommute = bus251CommuteKey(clock.minutes);
+      if (automaticCommute !== currentBusCommute) {
+        currentBusCommute = automaticCommute;
+        syncBusLocation(currentBusCommute, { pinned: false });
+      }
+    }
+    refreshBus251LiveState();
+    return;
+  }
+
   const period = SCHEDULE.routes[currentRouteKey].periods[currentView];
   const status = serviceDayStatus(new Date(), SCHEDULE.service);
   const nextTrip = status.active ? nextTripFor(period, status.minutes) : null;
@@ -558,6 +824,93 @@ function applySelection(routeKey, view, { syncUrl = true, focusTab = false } = {
   }
 }
 
+function applyService(
+  serviceKey,
+  { syncUrl = true, focusTab = false, resetBusCommute = false } = {},
+) {
+  if (serviceKey !== "shuttle" && serviceKey !== "bus-251") {
+    return;
+  }
+
+  currentService = serviceKey;
+  if (serviceKey === "bus-251" && resetBusCommute) {
+    busCommutePinned = false;
+    currentBusCommute = busCommuteFromLocation({ useHash: false });
+  }
+
+  serviceTabs.forEach((tab) => {
+    const selected = tab.dataset.service === serviceKey;
+    tab.setAttribute("aria-selected", String(selected));
+    tab.tabIndex = selected ? 0 : -1;
+    if (selected && focusTab) {
+      tab.focus();
+    }
+  });
+
+  const activePanelId = serviceKey === "bus-251"
+    ? "bus-251-service-panel"
+    : "shuttle-service-panel";
+  servicePanels.forEach((servicePanel) => {
+    servicePanel.hidden = servicePanel.id !== activePanelId;
+  });
+
+  heroDescription.textContent = serviceKey === "bus-251"
+    ? "See today’s next 251, your commute stops, and the full loop at a glance."
+    : "See the next run, every stop, and each train connection at a glance.";
+
+  if (serviceKey === "bus-251") {
+    renderBus251();
+  } else {
+    renderPeriod(currentRouteKey, currentView);
+  }
+
+  try {
+    window.localStorage.setItem("zchedule-service", serviceKey);
+  } catch {
+    // The selected service remains active for this visit if storage is unavailable.
+  }
+
+  if (syncUrl) {
+    if (serviceKey === "bus-251") {
+      syncBusLocation(currentBusCommute, { pinned: busCommutePinned });
+    } else {
+      syncLocation(currentRouteKey, currentView);
+    }
+  }
+}
+
+serviceTabs.forEach((tab, index) => {
+  tab.addEventListener("click", () => {
+    applyService(tab.dataset.service, {
+      resetBusCommute: tab.dataset.service === "bus-251",
+    });
+  });
+
+  tab.addEventListener("keydown", (event) => {
+    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") {
+      return;
+    }
+
+    event.preventDefault();
+    const direction = event.key === "ArrowRight" ? 1 : -1;
+    const nextIndex = (index + direction + serviceTabs.length) % serviceTabs.length;
+    const nextService = serviceTabs[nextIndex].dataset.service;
+    applyService(nextService, {
+      focusTab: true,
+      resetBusCommute: nextService === "bus-251",
+    });
+  });
+});
+
+busCommuteButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    currentBusCommute = button.dataset.commute;
+    busCommutePinned = true;
+    renderBus251();
+    syncBusLocation(currentBusCommute);
+  });
+});
+
 routeButtons.forEach((button) => {
   button.addEventListener("click", () => {
     applySelection(button.dataset.route, currentView);
@@ -582,8 +935,18 @@ tabs.forEach((tab, index) => {
 });
 
 function applyLocationState() {
+  const serviceKey = serviceFromLocation({ useSavedService: false });
+  if (serviceKey === "bus-251") {
+    const hashView = window.location.hash.slice(1).toLowerCase();
+    busCommutePinned = hashView in BUS_251.commutes;
+    currentBusCommute = busCommuteFromLocation({ useHash: busCommutePinned });
+    applyService(serviceKey, { syncUrl: false });
+    return;
+  }
+
   const routeKey = routeFromLocation({ useSavedRoute: false });
   applySelection(routeKey, viewFromLocation(routeKey), { syncUrl: false });
+  applyService("shuttle", { syncUrl: false });
 }
 
 window.addEventListener("hashchange", applyLocationState);
@@ -595,6 +958,15 @@ fullViewButton.addEventListener("click", () => {
   originalDialogTitle.textContent = `${route.label} · ${period.label} original`;
   originalImage.src = originalImageFor(route, currentView);
   originalImage.alt = `${route.label} ${period.label} original timetable`;
+  fullScheduleDialog.showModal();
+});
+
+busOriginalButton.addEventListener("click", () => {
+  const clock = scheduleClock(new Date(), BUS_251.timeZone);
+  const day = BUS_251.days[bus251DayKey(clock.weekday)];
+  originalDialogTitle.textContent = `Route 251 · ${day.label} original`;
+  originalImage.src = day.originalImage;
+  originalImage.alt = `Route 251 ${day.label} original timetable`;
   fullScheduleDialog.showModal();
 });
 
@@ -657,7 +1029,15 @@ installDialog.addEventListener("click", (event) => {
 });
 
 standaloneMedia.addEventListener?.("change", syncInstallUI);
-window.addEventListener("pageshow", syncInstallUI);
+window.addEventListener("pageshow", () => {
+  syncInstallUI();
+  refreshLiveState();
+});
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") {
+    refreshLiveState();
+  }
+});
 syncInstallUI();
 
 if ("serviceWorker" in navigator) {
@@ -669,5 +1049,13 @@ if ("serviceWorker" in navigator) {
 }
 
 const initialRoute = routeFromLocation();
-applySelection(initialRoute, viewFromLocation(initialRoute));
+applySelection(initialRoute, viewFromLocation(initialRoute), { syncUrl: false });
+const initialService = serviceFromLocation();
+if (initialService === "bus-251") {
+  const explicitBusService = new URLSearchParams(window.location.search).get("service") === "251";
+  const hashView = window.location.hash.slice(1).toLowerCase();
+  busCommutePinned = explicitBusService && hashView in BUS_251.commutes;
+  currentBusCommute = busCommuteFromLocation({ useHash: busCommutePinned });
+}
+applyService(initialService);
 window.setInterval(refreshLiveState, 60_000);

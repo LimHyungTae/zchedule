@@ -8,7 +8,7 @@
     <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
     <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
     <meta name="referrer" content="no-referrer">
-    <meta name="description" content="Weekday shuttle routes and timetables, one tap away.">
+    <meta name="description" content="Shuttle and Route 251 timetables, one tap away.">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -16,11 +16,11 @@
 
     <title>Zchedule</title>
 
-    <link rel="manifest" href="./manifest.webmanifest?v=7">
+    <link rel="manifest" href="./manifest.webmanifest?v=8">
     <link rel="icon" href="./assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="./assets/icon-192.png">
-    <link rel="stylesheet" href="./styles.css?v=7">
-    <script src="./app.js?v=7" type="module"></script>
+    <link rel="stylesheet" href="./styles.css?v=8">
+    <script src="./app.js?v=8" type="module"></script>
   </head>
 
   <body>
@@ -39,8 +39,51 @@
         <section class="hero" aria-labelledby="hero-title">
           <p class="eyebrow">PERSONAL TIMETABLE · <span id="route-context">HILLSDALE · JAN 05, 2026</span></p>
           <h1 id="hero-title">The right ride, right away.</h1>
-          <p>See the next run, every stop, and each train connection at a glance.</p>
+          <p id="hero-description">See the next run, every stop, and each train connection at a glance.</p>
         </section>
+
+        <nav class="service-switcher" role="tablist" aria-label="Choose a timetable">
+          <button
+            class="service-switcher__tab"
+            id="shuttle-service-tab"
+            type="button"
+            role="tab"
+            aria-selected="true"
+            aria-controls="shuttle-service-panel"
+            data-service="shuttle"
+            data-testid="service-shuttle"
+          >
+            <span class="service-switcher__number" aria-hidden="true">Z</span>
+            <span>
+              <strong>Shuttles</strong>
+              <small>4 routes</small>
+            </span>
+          </button>
+          <button
+            class="service-switcher__tab"
+            id="bus-251-service-tab"
+            type="button"
+            role="tab"
+            aria-selected="false"
+            aria-controls="bus-251-service-panel"
+            tabindex="-1"
+            data-service="bus-251"
+            data-testid="service-bus-251"
+          >
+            <span class="service-switcher__number" aria-hidden="true">251</span>
+            <span>
+              <strong>251 Bus</strong>
+              <small>Daily loop</small>
+            </span>
+          </button>
+        </nav>
+
+        <section
+          class="service-panel"
+          id="shuttle-service-panel"
+          role="tabpanel"
+          aria-labelledby="shuttle-service-tab"
+        >
 
         <section class="route-picker" aria-labelledby="route-picker-title">
           <div class="route-picker__heading">
@@ -171,6 +214,91 @@
           <div class="legend" id="legend" aria-label="Transit connection legend"></div>
 
           <div class="trip-list" id="trip-list" role="list" aria-live="polite"></div>
+        </section>
+
+        </section>
+
+        <section
+          class="service-panel bus-251-panel"
+          id="bus-251-service-panel"
+          role="tabpanel"
+          aria-labelledby="bus-251-service-tab"
+          hidden
+        >
+          <div class="bus-commute-picker" role="group" aria-label="Choose Route 251 direction">
+            <button
+              class="bus-commute-option"
+              type="button"
+              data-commute="morning"
+              data-testid="bus-commute-morning"
+              aria-pressed="true"
+            >
+              <span class="period-tab__icon" aria-hidden="true">☼</span>
+              <span>
+                <strong>To Foster City</strong>
+                <small>From Hillsdale · AM</small>
+              </span>
+            </button>
+            <button
+              class="bus-commute-option"
+              type="button"
+              data-commute="afternoon"
+              data-testid="bus-commute-afternoon"
+              aria-pressed="false"
+            >
+              <span class="period-tab__icon" aria-hidden="true">◐</span>
+              <span>
+                <strong>To Hillsdale</strong>
+                <small>From Foster City Blvd · PM</small>
+              </span>
+            </button>
+          </div>
+
+          <section
+            class="next-ride"
+            id="bus-next-ride"
+            role="status"
+            aria-atomic="true"
+            aria-labelledby="bus-next-label"
+          >
+            <div class="next-ride__signal" aria-hidden="true">
+              <span></span><span></span><span></span>
+            </div>
+            <div class="next-ride__copy">
+              <p id="bus-next-label">UP NEXT · ROUTE 251</p>
+              <div class="next-ride__main">
+                <time id="bus-next-time">—</time>
+                <span id="bus-next-countdown">Checking</span>
+              </div>
+              <p id="bus-next-route">Finding today’s next bus.</p>
+            </div>
+          </section>
+
+          <section class="schedule-card bus-schedule-card" aria-labelledby="bus-schedule-title">
+            <div class="schedule-card__header">
+              <div>
+                <p class="schedule-card__eyebrow" id="bus-period-kicker">ROUTE 251 · TODAY</p>
+                <h2 id="bus-schedule-title">
+                  <span id="bus-period-title">To Foster City</span>
+                  <span class="trip-count" id="bus-trip-count">— buses</span>
+                </h2>
+              </div>
+
+              <button class="text-button" id="bus-original-button" type="button">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5" />
+                </svg>
+                View original
+              </button>
+            </div>
+
+            <div class="bus-day-summary">
+              <span class="bus-day-summary__badge" id="bus-day-badge">TODAY</span>
+              <span id="bus-day-copy">Showing today’s schedule automatically.</span>
+            </div>
+
+            <div class="bus-run-list" id="bus-run-list"></div>
+          </section>
         </section>
 
         <section class="install-card" aria-labelledby="install-title">
